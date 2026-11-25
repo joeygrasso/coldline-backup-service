@@ -1,0 +1,5 @@
+# Coldline Backup Service: example configuration
+# Installed as /etc/coldline/coldline.yaml.example; copy to coldline.yaml.
+#
+# The backup_target schema is being designed (docs/design.md).
+backup_targets: []

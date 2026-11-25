@@ -1,0 +1,117 @@
+#!/usr/bin/env bash
+# Coldline Backup Service: command-line entry point.
+# SPDX-License-Identifier: MIT
+set -Eeuo pipefail
+
+# Library directory: replaced at install time (make install); falls back to the
+# source tree so `./bin/coldline` works from a checkout.
+COLDLINE_LIBDIR="${COLDLINE_LIBDIR:-@LIBDIR@}"
+if [[ "$COLDLINE_LIBDIR" == "@LIBDIR@" || ! -d "$COLDLINE_LIBDIR" ]]; then
+  COLDLINE_LIBDIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../lib/coldline" && pwd)"
+fi
+readonly COLDLINE_LIBDIR
+# shellcheck source=../lib/coldline/common.sh
+. "$COLDLINE_LIBDIR/common.sh"
+trap cl_on_error ERR
+
+readonly COLDLINE_VERSION="@VERSION@"
+COLDLINE_CONFIG="${COLDLINE_CONFIG:-/etc/coldline/coldline.yaml}"
+
+usage() {
+  cat <<USAGE
+Usage: coldline [global options] <command> [args]
+
+Coldline Backup Service: one tool for backup sources and destinations.
+
+Commands:
+  help              Show this help
+  version           Show version
+
+Planned (design in progress):
+  run <target>      Run a backup target (source side)
+  receive           Accept an incoming backup (destination side, via SSH forced command)
+  list              List targets / snapshots
+  restore           Restore from a snapshot
+  verify            Verify snapshot integrity
+  check-config      Validate configuration
+
+Global options:
+  -c, --config FILE  Configuration file (default: $COLDLINE_CONFIG; env COLDLINE_CONFIG)
+  -v, --verbose      More output (repeatable)
+  -q, --quiet        Errors only
+  -h, --help         Show this help
+  -V, --version      Show version
+
+Exit status follows sysexits(3). See coldline(1).
+USAGE
+}
+
+version() {
+  local v="$COLDLINE_VERSION"
+  if [[ "$v" == "@VERSION@" ]]; then
+    v="$(cat "$COLDLINE_LIBDIR/../../VERSION" 2>/dev/null || echo unknown)-dev"
+  fi
+  printf 'coldline %s\n' "$v"
+}
+
+main() {
+  while (($#)); do
+    case "$1" in
+      -h | --help)
+        usage
+        return "$CL_EX_OK"
+        ;;
+      -V | --version)
+        version
+        return "$CL_EX_OK"
+        ;;
+      -v | --verbose)
+        CL_VERBOSITY=$((CL_VERBOSITY + 1))
+        shift
+        ;;
+      -q | --quiet)
+        CL_VERBOSITY=0
+        shift
+        ;;
+      -c | --config)
+        [[ $# -ge 2 ]] || cl_die "$CL_EX_USAGE" "$1 requires a file argument"
+        COLDLINE_CONFIG="$2"
+        shift 2
+        ;;
+      --config=*)
+        COLDLINE_CONFIG="${1#*=}"
+        shift
+        ;;
+      --)
+        shift
+        break
+        ;;
+      -*)
+        usage >&2
+        cl_die "$CL_EX_USAGE" "unknown option: $1"
+        ;;
+      *) break ;;
+    esac
+  done
+  export COLDLINE_CONFIG CL_VERBOSITY
+
+  local cmd="${1:-}"
+  [[ $# -gt 0 ]] && shift
+  case "$cmd" in
+    "")
+      usage >&2
+      exit "$CL_EX_USAGE" # exit, not return: a non-zero return would trip the ERR trap
+      ;;
+    help) usage ;;
+    version) version ;;
+    run | receive | list | restore | verify | check-config)
+      cl_die "$CL_EX_UNAVAILABLE" "'$cmd' is not implemented yet (see docs/design.md)"
+      ;;
+    *)
+      usage >&2
+      cl_die "$CL_EX_USAGE" "unknown command: $cmd"
+      ;;
+  esac
+}
+
+main "$@"

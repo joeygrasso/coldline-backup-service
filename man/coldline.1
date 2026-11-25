@@ -1,0 +1,66 @@
+.TH COLDLINE 1 "2026-11-25" "coldline @VERSION@" "User Commands"
+.SH NAME
+coldline \- Coldline Backup Service: backup source and destination tool
+.SH SYNOPSIS
+.B coldline
+[\fIglobal options\fR] \fIcommand\fR [\fIargs\fR]
+.SH DESCRIPTION
+.B coldline
+is a shell-based backup tool. The same program runs on backup sources and
+destinations; behavior is selected by configuration and command. Backups are
+declared as a list of \fIbackup targets\fR in a YAML configuration file.
+.PP
+The project is in early design; only \fBhelp\fR and \fBversion\fR are implemented.
+.SH COMMANDS
+.TP
+.B help
+Show usage.
+.TP
+.B version
+Show version.
+.SH OPTIONS
+.TP
+.BR \-c ", " \-\-config " \fIFILE\fR"
+Configuration file. Default \fI/etc/coldline/coldline.yaml\fR.
+.TP
+.BR \-v ", " \-\-verbose
+Increase verbosity (repeatable).
+.TP
+.BR \-q ", " \-\-quiet
+Only print errors.
+.TP
+.BR \-h ", " \-\-help
+Show usage.
+.TP
+.BR \-V ", " \-\-version
+Show version.
+.SH ENVIRONMENT
+.TP
+.B COLDLINE_CONFIG
+Configuration file path.
+.TP
+.B NO_COLOR
+Disable colored output.
+.SH FILES
+.TP
+.I /etc/coldline/coldline.yaml
+Main configuration.
+.TP
+.I /etc/coldline/conf.d/*.yaml
+Configuration drop-ins (lexical order).
+.TP
+.I /var/lib/coldline/
+State.
+.TP
+.I /run/coldline/
+Runtime files and locks.
+.SH EXIT STATUS
+Follows
+.BR sysexits (3):
+0 success, 64 usage error, 69 unavailable, 70 internal error, 78 configuration error.
+.SH SEE ALSO
+.BR ssh (1),
+.BR rsync (1),
+.BR systemd.timer (5)
+.SH BUGS
+https://github.com/joeygrasso/coldline-backup-service/issues
